@@ -5,6 +5,11 @@ import (
 	"github.com/dmolina79/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/dmolina79/bookstore_users-api/utils/date"
 	"github.com/dmolina79/bookstore_users-api/utils/errors"
+	"log"
+)
+
+const (
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?,?,?,?);"
 )
 
 var (
@@ -29,16 +34,31 @@ func (user *User) Get() *errors.RestErr {
 }
 
 func (user *User) Save() *errors.RestErr {
-	current := usersDB[user.Id]
-	if current != nil {
-		if current.Email == user.Email {
-			return errors.NewBadRequest(fmt.Sprintf("email %s already registered", user.Email))
-		}
-		return errors.NewBadRequest(fmt.Sprintf("user %d already exists", user.Id))
+	stmt, err := users_db.Client.Prepare(queryInsertUser)
+	if err != nil {
+		log.Println("entre a error de prepare")
+		return errors.NewInternalServer(err.Error())
 	}
+	defer stmt.Close()
+
 	user.DateCreated = date.GetNowString()
-	usersDB[user.Id] = user
+
+	insertResult, err := stmt.Exec(
+		user.FirstName,
+		user.LastName,
+		user.Email,
+		user.DateCreated,
+	)
+
+	if err != nil {
+		return errors.NewInternalServer(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
+
+	userId, err := insertResult.LastInsertId()
+	if err != nil {
+		return errors.NewInternalServer(fmt.Sprintf("error when trying to get last insert id: %s", err.Error()))
+	}
+	user.Id = userId
 
 	return nil
-
 }

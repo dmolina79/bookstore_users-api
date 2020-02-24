@@ -13,7 +13,7 @@ var (
 
 func init() {
 	var err error
-	Client, err := sql.Open("mysql", config.GetUsersDBDataSourceName())
+	Client, err = sql.Open("mysql", config.GetUsersDBDataSourceName())
 	if err != nil {
 		panic(err)
 	}

@@ -37,7 +37,7 @@ func GetUsersDBDataSourceName() string {
 	password := os.Getenv(mysqlUsersPwd)
 	host := os.Getenv(mysqlUsersHost)
 	dbName := os.Getenv(mysqlUsersDb)
-	datasourceName :=  fmt.Sprintf("%s:%s@tcp(%s)/%s?charset?utf8",
+	datasourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset?utf8",
 		username,
 		password,
 		host,
