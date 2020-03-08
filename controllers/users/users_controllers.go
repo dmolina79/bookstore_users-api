@@ -114,5 +114,5 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, user.Marshall(c.GetHeader("X-Public") == "true"))
 }

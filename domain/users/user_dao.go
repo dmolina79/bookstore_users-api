@@ -6,6 +6,8 @@ import (
 	"github.com/dmolina79/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/dmolina79/bookstore_users-api/logger"
 	"github.com/dmolina79/bookstore_users-api/utils/errors"
+	"github.com/dmolina79/bookstore_users-api/utils/mysql_utils"
+	"strings"
 )
 
 const (
@@ -14,7 +16,7 @@ const (
 	queryUpdateUser             = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
 	queryDeleteUser             = "DELETE from users where id=?;"
 	queryFindUserByStatus       = "SELECT id, first_name, last_name, email, date_created, status FROM users where status=?;"
-	queryFindByEmailAndPassword = "SELECT id, first_name, last_name, email, date_created, status FROM users where email=? AND password=?;"
+	queryFindByEmailAndPassword = "SELECT id, first_name, last_name, email, date_created, status FROM users where email=? AND password=? AND status=?;"
 )
 
 var (
@@ -144,8 +146,11 @@ func (u *User) FindByEmailAndPassword() *errors.RestErr {
 	}
 	defer stmt.Close()
 
-	row := stmt.QueryRow(u.Email, u.Password)
+	row := stmt.QueryRow(u.Email, u.Password, StatusActive)
 	if err := mapUserFromRow(row, u); err != nil {
+		if strings.Contains(err.Error(), mysql_utils.ErrorNoRows) {
+			return errors.NewNotFound("invalid user credentials")
+		}
 		logger.Error("error when trying to map get user by email and pwd statement", err)
 		return errors.NewInternalServer("database error")
 	}
