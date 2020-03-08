@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	queryInsertUser       = "INSERT INTO users(first_name, last_name, email, date_created, status, password) VALUES(?,?,?,?,?,?);"
-	queryGetUser          = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE id=?;"
-	queryUpdateUser       = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
-	queryDeleteUser       = "DELETE from users where id=?;"
-	queryFindUserByStatus = "SELECT id, first_name, last_name, email, date_created, status FROM users where status=?;"
+	queryInsertUser             = "INSERT INTO users(first_name, last_name, email, date_created, status, password) VALUES(?,?,?,?,?,?);"
+	queryGetUser                = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE id=?;"
+	queryUpdateUser             = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
+	queryDeleteUser             = "DELETE from users where id=?;"
+	queryFindUserByStatus       = "SELECT id, first_name, last_name, email, date_created, status FROM users where status=?;"
+	queryFindByEmailAndPassword = "SELECT id, first_name, last_name, email, date_created, status FROM users where email=? AND password=?;"
 )
 
 var (
@@ -133,4 +134,21 @@ func (u *User) FindByStatus(status string) ([]User, *errors.RestErr) {
 	}
 	return results, nil
 
+}
+
+func (u *User) FindByEmailAndPassword() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryFindByEmailAndPassword)
+	if err != nil {
+		logger.Error("error when trying to prepare get user by email and pwd statement", err)
+		return errors.NewInternalServer("database error")
+	}
+	defer stmt.Close()
+
+	row := stmt.QueryRow(u.Email, u.Password)
+	if err := mapUserFromRow(row, u); err != nil {
+		logger.Error("error when trying to map get user by email and pwd statement", err)
+		return errors.NewInternalServer("database error")
+	}
+
+	return nil
 }
